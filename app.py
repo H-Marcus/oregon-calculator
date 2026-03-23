@@ -4,116 +4,72 @@ import pandas as pd
 # --- [設定] 網頁設定 ---
 st.set_page_config(page_title="奧瑞岡專業計分系統 | JCI 版", layout="centered", page_icon="⚖️")
 
-# --- [💡 Phase 1: JCI 專業 CSS 美化] ---
+# --- [💡 Phase 1: JCI 專業 CSS 美化 & 終極隱藏按鈕法] ---
 custom_css = """
 <style>
-/* 1. 網頁主體背景 (使用乾淨淡灰) */
-.stApp {
-    background-color: #f7f9fc;
-}
+.stApp { background-color: #f7f9fc; }
+[data-testid="stSidebar"] { background-color: #1a237e; color: white; }
+[data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3, [data-testid="stSidebar"] p { color: white !important; }
+h1 { color: #1a237e !important; font-weight: 900; border-bottom: 4px solid #fbc02d; padding-bottom: 10px; }
+h2 { color: #333 !important; margin-top: 1.8rem !important; font-weight: 700; }
 
-/* 2. 側邊欄樣式 (使用 JCI 專業深藍背景) */
-[data-testid="stSidebar"] {
-    background-color: #1a237e;
-    color: white;
-}
-/* 讓側邊欄的所有文字都是白色 */
-[data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3, [data-testid="stSidebar"] p {
-    color: white !important;
-}
+/* 🌟 終極隱藏：針對不同瀏覽器與 Streamlit 元件隱藏加減按鈕 */
+input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; }
+[data-testid="stNumberInput"] button { display: none !important; } /* 殺掉 Streamlit 自帶的按鈕 */
 
-/* 3. 主畫面標題美化 - 奧瑞岡 x JCI */
-h1 {
-    color: #1a237e !important;
-    font-weight: 900;
-    border-bottom: 4px solid #fbc02d; /* 金黃色裝飾下底線 */
-    padding-bottom: 10px;
-}
-h2 {
-    color: #333 !important;
-    margin-top: 1.8rem !important;
-    font-weight: 700;
-}
-
-/* 4. 修改輸入框樣式為圓角，增加點擊感與格鬥感 */
-.stNumberInput input {
-    border-radius: 12px !important;
-    border: 2px solid #ddd !important;
-    padding: 12px !important;
-    font-size: 1.1rem !important;
-}
-
-/* 5. 最終結果卡片 (超突出的結果區塊) */
-.result-card {
-    background-color: white;
-    padding: 30px;
-    border-radius: 20px;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.1); /* 強陰影 */
-    border-left: 15px solid #1a237e; /* 左側 JCI 專業藍條 */
-    margin-top: 40px;
-    margin-bottom: 40px;
-}
-
-/* 6. Metric 數字顏色 (總分) */
-[data-testid="stMetricLabel"] p {
-    font-size: 1.1rem !important;
-    color: #666 !important;
-}
-[data-testid="stMetricValue"] div {
-    font-size: 2.8rem !important;
-    color: #1a237e !important;
-    font-weight: 900;
-}
+.stNumberInput input { border-radius: 12px !important; border: 2px solid #ddd !important; padding: 12px !important; font-size: 1.1rem !important; }
+.result-card { background-color: white; padding: 30px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); border-left: 15px solid #1a237e; margin-top: 40px; margin-bottom: 40px; }
+[data-testid="stMetricLabel"] p { font-size: 1.1rem !important; color: #666 !important; }
+[data-testid="stMetricValue"] div { font-size: 2.8rem !important; color: #1a237e !important; font-weight: 900; }
 </style>
 """
 st.markdown(custom_css, unsafe_allow_html=True)
 
 
-# --- [💡 Phase 2: 側邊欄 Sidebar - JCI 青商元素] ---
+# --- [💡 Phase 2: 側邊欄 Sidebar] ---
 with st.sidebar:
     st.markdown("<div style='text-align: center; font-size: 120px; margin-top: 20px;'>⚖️</div>", unsafe_allow_html=True)
-    
     st.markdown("<h3 style='text-align: center; color: white;'>奧瑞岡辯論賽</h3>", unsafe_allow_html=True)
     st.markdown("<h1 style='text-align: center; color: #fbc02d; font-size: 2.2rem; border-bottom: none;'>專業結算系統</h1>", unsafe_allow_html=True)
     st.markdown("---")
-    
     st.markdown("### 📣 JCI 青商信條")
     st.write("「服務人群是人生最崇高的工作。」")
     st.write("衡情論理，公正裁判。⚖️")
     st.write("JCI - Developing Leaders for a Changing World.")
 
 
-# --- [Phase 3: 主畫面 Calculator - 橫向排版與核心邏輯] ---
-st.title("JCI奧瑞岡 結算神器")
+# --- [Phase 3: 主畫面 Calculator] ---
+st.title("奧瑞岡賽事 專業結算神器")
 st.write("衡情論理，公正裁判。請輸入雙方大項總分。")
 
-# --- 1. 正方輸入區 ---
+# --- 1. 正方輸入區 (💡 修正：在外層包上 round(..., 1) 強制鎖死小數點後一位) ---
 st.markdown("## ✅ 正方得分錄入 (1-2-3辯)", unsafe_allow_html=True)
 col_p1, col_p2, col_p3 = st.columns(3)
-with col_p1: p1 = st.number_input("🎙️ 一辯分數", min_value=0, step=1, value=0, key="in_p1")
-with col_p2: p2 = st.number_input("🎙️ 二辯分數", min_value=0, step=1, value=0, key="in_p2")
-with col_p3: p3 = st.number_input("🎙️ 三辯分數", min_value=0, step=1, value=0, key="in_p3")
+with col_p1: p1 = round(st.number_input("🎙️ 一辯分數", min_value=0.0, format="%.1f", value=0.0, step=None, key="in_p1"), 1)
+with col_p2: p2 = round(st.number_input("🎙️ 二辯分數", min_value=0.0, format="%.1f", value=0.0, step=None, key="in_p2"), 1)
+with col_p3: p3 = round(st.number_input("🎙️ 三辯分數", min_value=0.0, format="%.1f", value=0.0, step=None, key="in_p3"), 1)
 
 col_pc, col_pt = st.columns(2)
-with col_pc: p_con = st.number_input("📝 結辯分數", min_value=0, step=1, value=0, key="in_pc")
-with col_pt: p_team = st.number_input("🤝 團隊默契", min_value=0, step=1, value=0, key="in_pt")
+with col_pc: p_con = round(st.number_input("📝 結辯分數", min_value=0.0, format="%.1f", value=0.0, step=None, key="in_pc"), 1)
+with col_pt: p_team = round(st.number_input("🤝 團隊默契", min_value=0.0, format="%.1f", value=0.0, step=None, key="in_pt"), 1)
 
 st.markdown("<hr style='border: 1px solid #eee;'>", unsafe_allow_html=True)
 
-# --- 2. 反方輸入區 ---
+# --- 2. 反方輸入區 (💡 修正：在外層包上 round(..., 1)) ---
 st.markdown("## ❌ 反方得分錄入 (1-2-3辯)", unsafe_allow_html=True)
 col_c1, col_c2, col_c3 = st.columns(3)
-with col_c1: c1 = st.number_input("🎙️ 一辯分數", min_value=0, step=1, value=0, key="in_c1")
-with col_c2: c2 = st.number_input("🎙️ 二辯分數", min_value=0, step=1, value=0, key="in_c2")
-with col_c3: c3 = st.number_input("🎙️ 三辯分數", min_value=0, step=1, value=0, key="in_c3")
+with col_c1: c1 = round(st.number_input("🎙️ 一辯分數", min_value=0.0, format="%.1f", value=0.0, step=None, key="in_c1"), 1)
+with col_c2: c2 = round(st.number_input("🎙️ 二辯分數", min_value=0.0, format="%.1f", value=0.0, step=None, key="in_c2"), 1)
+with col_c3: c3 = round(st.number_input("🎙️ 三辯分數", min_value=0.0, format="%.1f", value=0.0, step=None, key="in_c3"), 1)
 
 col_cc, col_ct = st.columns(2)
-with col_cc: c_con = st.number_input("📝 結辯分數", min_value=0, step=1, value=0, key="in_cc")
-with col_ct: c_team = st.number_input("🤝 團隊默契", min_value=0, step=1, value=0, key="in_ct")
+with col_cc: c_con = round(st.number_input("📝 結辯分數", min_value=0.0, format="%.1f", value=0.0, step=None, key="in_cc"), 1)
+with col_ct: c_team = round(st.number_input("🤝 團隊默契", min_value=0.0, format="%.1f", value=0.0, step=None, key="in_ct"), 1)
 
 st.markdown("<hr style='border: 2px solid #ddd;'>", unsafe_allow_html=True)
 
-# --- [💡 Phase 4: 全新核心：第五比序 (評審判定)] ---
+# --- 4. 第五比序 (評審判定) ---
 st.markdown("## 📊 第五比序 (用於完全平手時)", unsafe_allow_html=True)
 st.write("前四層比序皆完全相同時，請查閱計分單上 **『評審打勾獲勝方』**。")
 judge_pick = st.selectbox(
@@ -123,8 +79,9 @@ judge_pick = st.selectbox(
 )
 
 # --- 5. 運算核心 ---
-p_total = p1 + p2 + p3 + p_con + p_team
-c_total = c1 + c2 + c3 + c_con + c_team
+# 因為上面已經強制 round() 了，這裡加總出來的數字絕對精準！
+p_total = round(p1 + p2 + p3 + p_con + p_team, 1)
+c_total = round(c1 + c2 + c3 + c_con + c_team, 1)
 
 scores = [p1, p2, p3, c1, c2, c3]
 if any(s > 0 for s in scores):
@@ -146,10 +103,10 @@ if p_total == 0 and c_total == 0:
     reason = "請在上方輸入分數"
 elif p_total > c_total:
     winner = "正方"
-    reason = f"第一比序：總分勝出 (正 {p_total} > 反 {c_total})"
+    reason = f"第一比序：總分勝出 (正 {p_total:.1f} > 反 {c_total:.1f})"
 elif c_total > p_total:
     winner = "反方"
-    reason = f"第一比序：總分勝出 (反 {c_total} > 正 {p_total})"
+    reason = f"第一比序：總分勝出 (反 {c_total:.1f} > 正 {p_total:.1f})"
 else: 
     if p_rank_sum < c_rank_sum:
         winner = "正方"
@@ -160,17 +117,17 @@ else:
     else: 
         if p_team > c_team:
             winner = "正方"
-            reason = f"第三比序：團隊分數勝出 (正 {p_team} > 反 {c_team})"
+            reason = f"第三比序：團隊分數勝出 (正 {p_team:.1f} > 反 {c_team:.1f})"
         elif c_team > p_team:
             winner = "反方"
-            reason = f"第三比序：團隊分數勝出 (反 {c_team} > 正 {p_team})"
+            reason = f"第三比序：團隊分數勝出 (反 {c_team:.1f} > 正 {p_team:.1f})"
         else: 
             if p_con > c_con:
                 winner = "正方"
-                reason = f"第四比序：結辯分數勝出 (正 {p_con} > 反 {c_con})"
+                reason = f"第四比序：結辯分數勝出 (正 {p_con:.1f} > 反 {c_con:.1f})"
             elif c_con > p_con:
                 winner = "反方"
-                reason = f"第四比序：結辯分數勝出 (反 {c_con} > 正 {p_con})"
+                reason = f"第四比序：結辯分數勝出 (反 {c_con:.1f} > 正 {p_con:.1f})"
             else:
                 if judge_pick == "正方獲勝 ✅":
                     winner = "正方"
@@ -180,29 +137,28 @@ else:
                     reason = "第五比序：完全平手下，由評審判定獲勝方。"
                 else:
                     winner = "完全平手"
-                    reason = "四項比序皆完全相同！請查閱評分單，手動在上方輸入評審判定誰獲勝。"
+                    reason = "四項比序皆完全相同！請查閱評分單，手動在下方輸入評審判定誰獲勝。"
 
-# --- 6. 結果顯示區 [💡 CSS 卡片包覆] ---
+# --- 6. 結果顯示區 ---
 st.markdown("<br><br>", unsafe_allow_html=True)
 st.markdown("<div class='result-card'>", unsafe_allow_html=True) 
 
 st.header("🏆 本場比賽 結算最終結果")
 
-# 顯示雙方總分與名次和
 col_res1, col_res2 = st.columns(2)
 with col_res1:
-    st.metric("✅ 正方總分", p_total, delta=f"名次和: {p_rank_sum:.1f}", delta_color="off")
+    st.metric("✅ 正方總分", f"{p_total:.1f}", delta=f"名次和: {p_rank_sum:.1f}", delta_color="off")
 with col_res2:
-    st.metric("❌ 反方總分", c_total, delta=f"名次和: {c_rank_sum:.1f}", delta_color="off")
+    st.metric("❌ 反方總分", f"{c_total:.1f}", delta=f"名次和: {c_rank_sum:.1f}", delta_color="off")
 
-# === 🌟 加回來的：辯士個人排名表格 ===
+# 辯士排名摘要
 st.markdown("### 📊 辯士排名摘要")
 rank_df = pd.DataFrame({
     "正方辯士": ["一辯", "二辯", "三辯"],
-    "正方得分": [p1, p2, p3],
-    "正方名次": [f"{r:.1f}" for r in p_ranks], # 格式化為小數點後一位
+    "正方得分": [f"{p1:.1f}", f"{p2:.1f}", f"{p3:.1f}"],
+    "正方名次": [f"{r:.1f}" for r in p_ranks], 
     "反方辯士": ["一辯", "二辯", "三辯"],
-    "反方得分": [c1, c2, c3],
+    "反方得分": [f"{c1:.1f}", f"{c2:.1f}", f"{c3:.1f}"],
     "反方名次": [f"{r:.1f}" for r in c_ranks]
 })
 st.dataframe(rank_df, hide_index=True, use_container_width=True)
